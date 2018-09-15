@@ -99,39 +99,25 @@ class Agent(object):
 class Radar(object):
     # 设置雷达坐标和半径
     def __init__(self, x, y, r):
-        #雷达x，y坐标和半径r
         self.x = x
         self.y = y
         self.r = r
-        # self.xx = []
-        # self.yy = []
-        #与agent交点坐标
+        self.xx = []
+        self.yy = []
         self.x_x = []
         self.y_y = []
-        #雷达线端坐标
-        self.pos_xx = []
-        self.pos_yy = []
-        for k in np.arange(0, 360, 10):
-            pos_xx = self.r * np.cos(k * np.pi / 180)
-            pos_yy = self.r * np.sin(k * np.pi / 180)
-            self.pos_yy.append(pos_yy)
-            self.pos_xx.append(pos_xx)
-        #与agnet相交的线
-        self.Q = []
         # self.env = env
         # pygame.key.set_repeat(500, 10)
 
     # 绘制雷达,item是指screen
     def draw(self, item, color=(255, 0, 0)):
-        for k in np.arange(0, 36):
-            # pos_xx = self.r * np.cos(k * np.pi / 180)
-            # pos_yy = self.r * np.sin(k * np.pi / 180)
+        for k in np.arange(0, 360, 10):
+            pos_xx = self.r * np.cos(k * np.pi / 180)
+            pos_yy = self.r * np.sin(k * np.pi / 180)
             # self.dx.append(pos_xx)
             # self.dy.append(pos_yy)
-            pos_x = self.pos_xx[k] + self.x
-            pos_y = self.pos_yy[k] + self.y
-            if k in self.Q:
-                color = (0,0,255)
+            pos_x = pos_xx + self.x
+            pos_y = pos_yy + self.y
             pygame.draw.line(item, color, [self.x, self.y], [pos_x, pos_y])
 
     # 键盘响应控制移动
@@ -151,12 +137,18 @@ class Radar(object):
     # 计算障碍物与雷达的交点，参数Item为障碍物，封装时方法中Item.--的参数名要改过来
     def calculate(self, Item):
         # dis_radar = [self.r]*36
-        dd = np.sqrt(np.square(self.x - Item.position[0]) + np.square(self.y - Item.position[1]))#雷达与agent距离
-        if dd <= self.r + (Item.d / 2):#判断雷达与agent是否相交
-            #向量法求出交点
+        for p in np.arange(0, 360, 10):
+            pos_xx = self.r * np.cos(p * np.pi / 180)
+            pos_yy = self.r * np.sin(p * np.pi / 180)
+            self.xx.append(pos_xx)
+            self.yy.append(pos_yy)
+            # pos_x = pos_xx + self.x
+            # pos_y = pos_yy + self.y
+        dd = np.sqrt(np.square(self.x - Item.position[0]) + np.square(self.y - Item.position[1]))
+        if dd <= self.r + (Item.d / 2):
             for q in np.arange(0, 36):
-                A = np.square(self.pos_xx[q]) + np.square(self.pos_yy[q])
-                B = 2 * ((self.pos_xx[q]) * (-(Item.position[0] - self.x)) + (self.pos_yy[q]) * (-(Item.position[1] - self.y)))
+                A = np.square(self.xx[q]) + np.square(self.yy[q])
+                B = 2 * ((self.xx[q]) * (-(Item.position[0] - self.x)) + (self.yy[q]) * (-(Item.position[1] - self.y)))
                 C = (Item.position[0] - self.x) ** 2 + (Item.position[1] - self.y) ** 2 - (Item.d / 2) ** 2
                 the = np.square(B) - 4 * A * C
                 # u1 = (-B - np.sqrt(the) / (2 * A))
@@ -164,12 +156,11 @@ class Radar(object):
                 if the == 0:
                     u = -B / (2 * A)
                     if u >= 0 and u <= 1:
-                        xx = self.pos_xx[q] * u
-                        yy = self.pos_yy[q] * u
+                        xx = self.xx[q] * u
+                        yy = self.yy[q] * u
                         self.x_x.append(xx)
                         self.y_y.append(yy)
-                        self.Q.append(q)
-                        # print(xx, yy)
+                        print(xx, yy)
                         # print(u)
                 elif the > 0:
                     u1 = ((-B) - np.sqrt(the)) / (2 * A)
@@ -177,40 +168,25 @@ class Radar(object):
                     # print("u:",u1,u2)
                     # print(the)
                     if (u1 >= 0 and u1 <= 1) and (u2 >= 0 and u2 <= 1):
-                        xx = self.pos_xx[q] * u1
-                        yy = self.pos_yy[q] * u1
+                        xx = self.xx[q] * u1
+                        yy = self.yy[q] * u1
                         self.x_x.append(xx)
                         self.y_y.append(yy)
-                        self.Q.append(q)
-                        # print(xx, yy)
+                        print(xx, yy)
 
                     elif (u1 >= 0 and u1 <= 1) and (u2 > 1 or u2 < 0):
-                        xx = self.pos_xx[q] * u1
-                        yy = self.pos_yy[q] * u1
+                        xx = self.xx[q] * u1
+                        yy = self.yy[q] * u1
                         self.x_x.append(xx)
                         self.y_y.append(yy)
-                        self.Q.append(q)
-                        # print(xx, yy)
+                        print(xx, yy)
                     elif (u2 >= 0 and u2 <= 1) and (u1 > 1 or u1 < 0):
-                        xx = self.pos_xx[q] * u2
-                        yy = self.pos_yy[q] * u2
+                        xx = self.xx[q] * u2
+                        yy = self.yy[q] * u2
                         self.x_x.append(xx)
                         self.y_y.append(yy)
-                        self.Q.append(q)
-                        # print(xx, yy)
-                # else:
-                #     self.x_x.append(self.pos_xx[q])
-                #     self.y_y.append(self.pos_yy[q])
-            print("x:",self.x_x,"\n","y:",self.y_y)
-            print(len(self.x_x),len(self.y_y))
-            print(self.Q)
+                        print(xx, yy)
+                else:
+                    self.x_x.append()
 
         return self.x_x, self.y_y
-
-radar = Radar(0,0,100)
-screen = pygame.display.set_mode((800,600))
-agent = Agent(init_position=np.array([100,0]))
-radar.calculate(agent)
-# while True:
-#     radar.draw(screen)
-print(len(radar.pos_xx))
